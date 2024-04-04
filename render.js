@@ -2,95 +2,76 @@ const Video = Twilio.Video;
 const Device = Twilio.Device;
 var token;
 let room;
-const connect = Twilio.Video;
 let localParticipant;
 var connection;
 
 async function Start() {
     try {
         await getToken();
-        console.log("Token in start", token);
-        room = await Video.connect(token, { name: "Room2" });
-        console.log(`Successfully joined a Room: ${room}`);
+        room = await Video.connect(token, {
+            audio: true,
+            name: "New Room 1",
+            video: { width: 640 }
+        });
 
+        console.log(`Connected to Room: ${room.name}`);
 
-
-        //logging the local participant 
+        // Get local participant
         localParticipant = room.localParticipant;
-        console.log(`Connected to the Room as LocalParticipant "${localParticipant.identity}"`);
-        // const 
-        //render local participant 
-        handleConnectedlocalParticipant(localParticipant);
-        // Add event handler for participant Connected except the local new participant or already joined ones
-        handleandRenderParticipant();
+
+        // Render local participant
+        renderParticipant(localParticipant);
+
+        room.on('participantConnected', participant => {
+            console.log(`Remote participant connected: ${participant.identity}`);
+            renderremoteParticipant(participant);
+        });
+
+        
 
     } catch (error) {
         console.error(`Unable to connect to Room: ${error.message}`);
     }
 }
+//for local participant
+const renderParticipant = (participant) => {
+    console.log("Rendering local participant:", participant.identity);
 
-handleConnectedlocalParticipant = (localParticipant) => {
-    // create a div for this participant's tracks
-    // const localparticipantDiv = document.createElement("div");
-    // localparticipantDiv.setAttribute("id", localparticipant.identity);
-    // document.getElementById("myVideo").appendChild(localparticipantDiv);
-    // localparticipant.tracks.forEach((trackPublication) => {
-    //     handleTrackPublication(trackPublication, localparticipant);
-    // });
-    // participant.on("trackPublished", handleTrackPublication);
-    // const localParticipant = room.localParticipant;
-    // console.log(`Connected to the Room as LocalParticipant "${localParticipant.identity}"`);
-    console.log("handleConnectedLocalparticipant function is called");
-    room.on('localparticipantConnected', localParticipant => {
-        console.log(`localParticipant "${localParticipant.identity}" connected`);
-      
-        localParticipant.tracks.forEach(publication => {
-          if (publication.isSubscribed) {
-            const track = publication.track;
-            document.getElementById('myVideo').appendChild(track.attach());
-          }
-        });
-      
-        localParticipant.on('trackSubscribed', track => {
-          document.getElementById('myVideo').appendChild(track.attach());
-        });
-      });
-      console.log("handleConnectedLocalparticipant function is executed as well ");
+    const localparticipantDiv = document.createElement("div");
+    localparticipantDiv.setAttribute("id", participant.identity);
+    document.getElementById("myVideo").appendChild(localparticipantDiv);
+
+    participant.tracks.forEach(trackPublication => {
+        handleTrackPublication(trackPublication, participant);
+    });
+
+    participant.on("trackPublished", trackPublication => {
+        handleTrackPublication(trackPublication, participant);
+    });
+};
+
+
+//for remote participant
+const renderremoteParticipant = (participant) => {
+    console.log("Rendering participant:", participant.identity);
+
+    const participantDiv = document.createElement("div");
+    participantDiv.setAttribute("id", participant.identity);
+    document.getElementById("videoContainer").appendChild(participantDiv);
+
+    participant.tracks.forEach(trackPublication => {
+        handleTrackPublication(trackPublication, participant);
+    });
+
+    participant.on("trackPublished", trackPublication => {
+        handleTrackPublication(trackPublication, participant);
+    });
 };
 
 const handleTrackPublication = (trackPublication, participant) => {
-    function displayTrack(track) {
-        const participantDiv = document.getElementById(participant.identity);
-        participantDiv.append(track.attach());
+    const track = trackPublication.track;
+    const participantDiv = document.getElementById(participant.identity);
+    if (track) {
+        participantDiv.appendChild(track.attach());
     }
-    if (trackPublication.track) {
-        displayTrack(trackPublication.track);
-    }
-    trackPublication.on("subscribed", displayTrack);
 };
-
-const handleandRenderParticipant=()=>{
-    room.on('participantConnected', participant => {
-        console.log(`A remote Participant connected: ${participant}`);
-        // Call function to handle connected participant
-        // Attach the Participant's Media to a <div> element.
-        participant.tracks.forEach(publication => {
-            if (publication.isSubscribed) {
-                const track = publication.track;
-                document.getElementById('remote-media-div').appendChild(track.attach());
-            }
-        });
-
-        participant.on('trackSubscribed', track => {
-            document.getElementById('remote-media-div').appendChild(track.attach());
-        });
-    });
-
-}
-
-
-
-//for participant disconnected
-// room.on('participantDisconnected', participant => {
-//         console.log(`Participant disconnected: ${participant.identity}`);
-//     });
