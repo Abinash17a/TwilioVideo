@@ -1,0 +1,205 @@
+<apex:page controller="ControllerVC" showHeader="false" docType="html-5.0" lightningStylesheets="true">
+    <apex:includeLightning />
+    <script src="//sdk.twilio.com/js/video/releases/2.17.1/twilio-video.min.js"></script>
+    <script>
+        const Video = Twilio.Video;
+        const Device = Twilio.Device;
+        var token;
+        let room;
+        const connect = Twilio.Video;
+        var connection;
+        window.addEventListener('load', async function () {
+            var xhr = new XMLHttpRequest();
+
+
+            xhr.open('POST', 'https://zingsalesforcetokenapi.azurewebsites.net/videotoken', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = async function () {
+                if (xhr.status === 200) {
+                    var data = xhr.responseText;
+                    token = data;
+                    // Process the retrieved data
+                    console.log(data);
+
+                    connection = await Twilio.Video.connect(data)           
+                    console.log(connection, '-----------27')
+                    handleConnectedParticipant(connection.localParticipant);
+                    connection.participants.forEach(handleConnectedParticipant);
+                    connection.on("participantConnected", handleConnectedParticipant);
+                }
+                else {
+                    console.error('Error:', xhr.status);
+                }
+            };
+            xhr.onerror = function () {
+                console.error('Request failed');
+            };
+            //xhr.send();
+            var requestBody = JSON.stringify({ "TWILIO_ACCOUNT_SID": "AC1ce8e56c9b9fcbbd4bbd06351c8a8531", "TWILIO_API_KEY": "SKafe4b7de021987e0dd86cb7d3ce0a173", "TWILIO_API_SECRET": "ljH6UTVR0y15gaNF13kIErZgb3x7YXHk", "identity": "abhay", "roomId": "New Room 1" });
+            xhr.send(requestBody);
+        });
+
+        var videoStream;
+
+        function startWebcam() {
+            navigator.mediaDevices
+                .getUserMedia({ video: true })
+                .then(function (stream) {
+                    var video = document.getElementById("myVideo");
+                    videoStream = stream;
+                    video.srcObject = stream;
+                })
+                .catch(function (error) {
+                    console.error("Error accessing webcam:", error);
+                });
+        }
+
+        function stopWebcam() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(function (track) {
+                    track.stop();
+                });
+                videoStream = null;
+            }
+            var video = document.getElementById("myVideo");
+            video.srcObject = null;
+        }
+        let mediaStream = null;
+
+        function startMicrophone() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    mediaStream = stream;
+                })
+                .catch(function (error) {
+                    console.error('Error accessing microphone: ' + error);
+                });
+        }
+
+        function stopMicrophone() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(function (track) {
+                    track.stop();
+                });
+            }
+        }
+
+        function toggleMicrophone() {
+            // toggle the microphone via twilio-video.js
+            room.localParticipant.audioTracks.forEach(publication => {
+                publication.track.disable();
+            });
+        }
+
+        function mute() {
+            room.localParticipant.audioTracks.forEach(publication => {
+                publication.track.disable();
+            });
+        }
+
+        function togglemute() {
+            if (connection) {
+                connection.then(room => {
+                    room.localParticipant.audioTracks.forEach(function (track) {
+                        console.log("room", '-----------88', track.track.isEnabled)
+                        track.track.disable();
+                    });
+                });
+            }
+            updateMuteButton();
+        }
+
+        handleConnectedParticipant = (participant) => {
+            // create a div for this participant's tracks
+            const participantDiv = document.createElement("div");
+            participantDiv.setAttribute("id", participant.identity);
+            document.getElementById("myVideo").appendChild(participantDiv);
+            participant.tracks.forEach((trackPublication) => {
+                handleTrackPublication(trackPublication, participant);
+            });
+            participant.on("trackPublished", handleTrackPublication);
+        };
+
+        const handleTrackPublication = (trackPublication, participant) => {
+            function displayTrack(track) {
+                const participantDiv = document.getElementById(participant.identity);
+                participantDiv.append(track.attach());
+            }
+            if (trackPublication.track) {
+                displayTrack(trackPublication.track);
+            }
+            trackPublication.on("subscribed", displayTrack);
+        };
+
+
+        async function Start() {
+            console.log('token check', token);
+            //console.log(`room check: ${room}`);
+            await Video.connect(token, { name: 'jihsda' })
+                .then(room => {
+                    console.log(`Successfully joined a Room: ${room}`);
+                    room.on('participantConnected', participant => {
+                        console.log(`A remote Participant connected: ${participant}`);
+                    });
+                    room = room
+                })
+                .catch(error => {
+                    console.error(`Unable to connect to Room: ${error.message}`);
+                });
+        }
+    </script>
+    <style>
+        .video-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80vh;
+        }
+
+        .participant-list {
+            flex: 1;
+            background-color: #f0f0f0;
+            overflow-y: auto;
+        }
+
+        .video-screen {
+            flex: 3;
+            background-color: #d9d9d9;
+        }
+    </style>
+    <apex:form style="background-color:#ADD8E6">
+        <apex:pageBlock>
+            <div style="text-align:center;">
+
+                <br /><br /><br /><br />
+                <!-- <div class="videopreview-div">
+                
+            <apex:inputFile value="{!cont.VersionData}"  accept="video/*;capture=camcorder" filename="{!cont.Title}" />
+            <video id="video" autoplay="loop"></video> 
+                </div>-->
+                <apex:outputtext value="Name " /> <br />
+                <apex:inputtext label="{!name}" value="{!name}" /> <br /> <br />
+                <apex:outputtext value="Room " /> <br />
+                <apex:inputtext value="{!room}" /> <br /><br />
+                <!--<apex:commandButton style="font-size: 20px;" value="Start" onclick="Start()"/></apex:commandbutton>-->
+                <button type="button" onclick="Start()">Start</button>
+                <br />
+
+                <body>
+
+                    <video id="myVideo" width="320" height="240" autoplay="true">
+                        <button type="button" onclick="startWebcam()">Start Webcam</button></video>
+                    <button type="button" onclick="startWebcam()">Start Webcam</button>
+                    <button type="button" onclick="stopWebcam()">Stop Webcam</button>
+                    <button type="button" onclick="startMicrophone()">Start Microphone</button>
+                    <button type="button" onclick="stopMicrophone()">Stop Microphone</button>
+                          <button id="button-mute-unmute" onclick="toggleMicrophone()" type="button">Mute</button>
+
+                    <button id="Mute" type="button" class="button mute" onclick="mute()"><img
+                            src="{!$Resource.ZingMuteButton}" width="16" height="25" /></button>
+                </body>
+
+            </div>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>
