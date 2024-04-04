@@ -8,6 +8,7 @@ var connection;
 async function Start() {
     try {
         await getToken();
+        console.log(token);
         room = await Video.connect(token, {
             audio: true,
             name: "New Room 1",
@@ -26,8 +27,6 @@ async function Start() {
             console.log(`Remote participant connected: ${participant.identity}`);
             renderremoteParticipant(participant);
         });
-
-        
 
     } catch (error) {
         console.error(`Unable to connect to Room: ${error.message}`);
