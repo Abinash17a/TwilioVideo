@@ -27,6 +27,7 @@ async function Start() {
             console.log(`Remote participant connected: ${participant.identity}`);
             renderremoteParticipant(participant);
         });
+        
 
     } catch (error) {
         console.error(`Unable to connect to Room: ${error.message}`);
@@ -54,18 +55,21 @@ const renderParticipant = (participant) => {
 const renderremoteParticipant = (participant) => {
     console.log("Rendering participant:", participant.identity);
 
-    const participantDiv = document.createElement("div");
-    participantDiv.setAttribute("id", participant.identity);
-    document.getElementById("videoContainer").appendChild(participantDiv);
+    try {
+        const participantDiv = document.createElement("div");
+        participantDiv.setAttribute("id", participant.identity);
+        document.getElementById("videoContainer").appendChild(participantDiv);
 
-    participant.tracks.forEach(trackPublication => {
-        handleTrackPublication(trackPublication, participant);
-    });
+        participant.on('trackSubscribed', track => {
+            participantDiv.appendChild(track.attach());
+        });
 
-    participant.on("trackPublished", trackPublication => {
-        handleTrackPublication(trackPublication, participant);
-    });
+        console.log(`Rendering participant ${participant.identity} is rendered`);
+    } catch (error) {
+        console.error(`Error rendering participant ${participant.identity}:`, error);
+    }
 };
+
 
 const handleTrackPublication = (trackPublication, participant) => {
     const track = trackPublication.track;
