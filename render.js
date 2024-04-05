@@ -25,21 +25,35 @@ async function Start() {
 
         room.on('participantConnected', participant => {
             console.log(`Remote participant connected: ${participant.identity}`);
-            renderremoteParticipant(participant);
-        });
+            renderRemoteParticipant(participant);
         
+            // Subscribe to tracks for all participants in the room
+            room.participants.forEach(existingParticipant => {
+                existingParticipant.tracks.forEach(publication => {
+                    if (publication.isSubscribed) {
+                        renderTrack(publication.track, existingParticipant);
+                    }
+                });
+            });
+        });
+
+        room.on('participantDisconnected', participant => {
+            console.log(`Remote participant disconnected: ${participant.identity}`);
+            removeParticipantVideo(participant);
+        });
 
     } catch (error) {
         console.error(`Unable to connect to Room: ${error.message}`);
     }
 }
-//for local participant
+
+// Render local participant
 const renderParticipant = (participant) => {
     console.log("Rendering local participant:", participant.identity);
 
-    const localparticipantDiv = document.createElement("div");
-    localparticipantDiv.setAttribute("id", participant.identity);
-    document.getElementById("myVideo").appendChild(localparticipantDiv);
+    const localParticipantDiv = document.createElement("div");
+    localParticipantDiv.setAttribute("id", participant.identity);
+    document.getElementById("myVideo").appendChild(localParticipantDiv);
 
     participant.tracks.forEach(trackPublication => {
         handleTrackPublication(trackPublication, participant);
@@ -50,10 +64,9 @@ const renderParticipant = (participant) => {
     });
 };
 
-
-//for remote participant
-const renderremoteParticipant = (participant) => {
-    console.log("Rendering participant:", participant.identity);
+// Render remote participant
+const renderRemoteParticipant = (participant) => {
+    console.log("Rendering remote participant:", participant.identity);
 
     try {
         const participantDiv = document.createElement("div");
@@ -64,17 +77,26 @@ const renderremoteParticipant = (participant) => {
             participantDiv.appendChild(track.attach());
         });
 
-        console.log(`Rendering participant ${participant.identity} is rendered`);
+        console.log(`Rendering remote participant ${participant.identity}`);
     } catch (error) {
-        console.error(`Error rendering participant ${participant.identity}:`, error);
+        console.error(`Error rendering remote participant ${participant.identity}:`, error);
     }
 };
 
+// Remove participant video when they leave
+const removeParticipantVideo = (participant) => {
+    const participantDiv = document.getElementById(participant.identity);
+    if (participantDiv) {
+        participantDiv.remove();
+        console.log(`Removed video for participant ${participant.identity}`);
+    }
+};
 
+// Handle track publication
 const handleTrackPublication = (trackPublication, participant) => {
     const track = trackPublication.track;
     const participantDiv = document.getElementById(participant.identity);
-    if (track) {
+    if (track && participantDiv) {
         participantDiv.appendChild(track.attach());
     }
 };
