@@ -20,21 +20,26 @@ async function Start() {
         // Get local participant
         localParticipant = room.localParticipant;
 
+
+
+
+
         // Render local participant
         renderParticipant(localParticipant);
+        //render previous participant
+        renderPreviousParticipants();
 
         room.on('participantConnected', participant => {
             console.log(`Remote participant connected: ${participant.identity}`);
             renderRemoteParticipant(participant);
-        
             // Subscribe to tracks for all participants in the room
-            room.participants.forEach(existingParticipant => {
-                existingParticipant.tracks.forEach(publication => {
-                    if (publication.isSubscribed) {
-                        renderTrack(publication.track, existingParticipant);
-                    }
-                });
-            });
+            // room.participants.forEach(existingParticipant => {
+            //     existingParticipant.tracks.forEach(publication => {
+            //         if (publication.isSubscribed) {
+            //             renderTrack(publication.track, existingParticipant);
+            //         }
+            //     });
+            // });
         });
 
         room.on('participantDisconnected', participant => {
@@ -99,4 +104,12 @@ const handleTrackPublication = (trackPublication, participant) => {
     if (track && participantDiv) {
         participantDiv.appendChild(track.attach());
     }
+};
+// Function to render all previous participants
+const renderPreviousParticipants = () => {
+    console.log("renderPreviousParticipant is called");
+    room.participants.forEach(existingParticipant => {
+        console.log(`Rendering previous participant: ${existingParticipant.identity}`);
+        renderRemoteParticipant(existingParticipant);
+    });
 };
