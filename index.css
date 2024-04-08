@@ -1,29 +1,40 @@
+/* Basic styles */
+
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-}
-
-.video-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: calc(100vh - 100px);
+    padding: 0;
+    font-family: sans-serif;
+  }
+  
+  .video-container {
+    display: grid; /* Use grid layout for dynamic arrangement */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Flexible columns based on video size */
+    grid-gap: 10px; /* Spacing between videos */
+    height: calc(100vh - 100px); /* Adjust height based on your needs */
     background-color: #f2f2f2;
-}
-
-.video-screen {
-    width: 640px;
-    height: 480px;
-    background-color: #d9d9d9;
-}
-
-.controls {
+  }
+  
+  .video-container div { /* Styles for each video element */
+    position: relative; /* Enable positioning for potential controls */
+    overflow: hidden; /* Clip video content within the container */
+    background-color: #d9d9d9; /* Optional background color for individual videos */
+  }
+  
+  #myVideo {
+    /* Style for the local participant video element */
+    width: 300px; /* Adjust width based on your preference */
+    height: 200px; /* Adjust height based on your preference */
+    border: 1px solid #ddd; /* Optional border */
+    margin: 10px; /* Optional margin */
+  }
+  
+  .controls {
     display: flex;
     justify-content: center;
     margin-top: 20px;
-}
-
-.controls button {
+  }
+  
+  .controls button {
     margin: 0 10px;
     padding: 10px 20px;
     font-size: 16px;
@@ -34,8 +45,17 @@ body {
     border-radius: 5px;
     outline: none;
     transition: background-color 0.3s ease;
-}
-
-.controls button:hover {
+  }
+  
+  .controls button:hover {
     background-color: #0056b3;
-}
+  }
+  
+  /* Media Queries (Optional): Adjust layout for different screen sizes */
+  
+  @media (max-width: 768px) {
+    #myVideo {
+      width: 100%; /* Make local video full-width on smaller screens */
+    }
+  }
+  

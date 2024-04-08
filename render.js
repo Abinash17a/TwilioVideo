@@ -12,18 +12,12 @@ async function Start() {
         room = await Video.connect(token, {
             audio: true,
             name: "New Room 1",
-            video: { width: 640 }
+            video: {width: 640, height: 480 }
         });
-
         console.log(`Connected to Room: ${room.name}`);
 
         // Get local participant
         localParticipant = room.localParticipant;
-
-
-
-
-
         // Render local participant
         renderParticipant(localParticipant);
         //render previous participant
@@ -32,14 +26,6 @@ async function Start() {
         room.on('participantConnected', participant => {
             console.log(`Remote participant connected: ${participant.identity}`);
             renderRemoteParticipant(participant);
-            // Subscribe to tracks for all participants in the room
-            // room.participants.forEach(existingParticipant => {
-            //     existingParticipant.tracks.forEach(publication => {
-            //         if (publication.isSubscribed) {
-            //             renderTrack(publication.track, existingParticipant);
-            //         }
-            //     });
-            // });
         });
 
         room.on('participantDisconnected', participant => {
@@ -70,13 +56,38 @@ const renderParticipant = (participant) => {
 };
 
 // Render remote participant
+// const renderRemoteParticipant = (participant) => {
+//     console.log("Rendering remote participant:", participant.identity);
+
+//     try {
+//         const participantDiv = document.createElement("div");
+//         participantDiv.setAttribute("id", participant.identity);
+//         document.getElementById("video-container").appendChild(participantDiv);
+
+//         participant.on('trackSubscribed', track => {
+//             participantDiv.appendChild(track.attach());
+//         });
+
+//         console.log(`Rendering remote participant ${participant.identity}`);
+//     } catch (error) {
+//         console.error(`Error rendering remote participant ${participant.identity}:`, error);
+//     }
+// };
 const renderRemoteParticipant = (participant) => {
     console.log("Rendering remote participant:", participant.identity);
 
     try {
+        const videoContainer = document.getElementById("videoContainer");
+        const numParticipants = room.participants.size + 1; // Adding 1 for the local participant
+        const gridSize = Math.ceil(Math.sqrt(numParticipants)); // Calculate grid size
+
+        // Set grid template columns based on grid size
+        videoContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+
         const participantDiv = document.createElement("div");
         participantDiv.setAttribute("id", participant.identity);
-        document.getElementById("videoContainer").appendChild(participantDiv);
+        participantDiv.classList.add("video-screen"); // Add class for styling
+        videoContainer.appendChild(participantDiv); // Append to videoContainer
 
         participant.on('trackSubscribed', track => {
             participantDiv.appendChild(track.attach());
@@ -113,3 +124,12 @@ const renderPreviousParticipants = () => {
         renderRemoteParticipant(existingParticipant);
     });
 };
+// room.on('participantConnected', participant => {
+//     console.log(`Remote participant connected: ${participant.identity}`);
+//     renderRemoteParticipant(participant);
+// });
+
+room&&room.on('participantDisconnected', participant => {
+    console.log(`Remote participant disconnected: ${participant.identity}`);
+    removeParticipantVideo(participant);
+});
