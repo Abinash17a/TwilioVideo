@@ -1,6 +1,6 @@
-import VideoActions from "./video";
+import VideoActions from "./video.js";
+import userActions from "./userActions.js";
+import UserActions from "./userActions.js";
 
-
-window.addEventListener('load', async function () {
-    VideoActions.JoinRoom();
-});
+UserActions.eventHandler();
+VideoActions.init();
