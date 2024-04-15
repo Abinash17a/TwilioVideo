@@ -45,38 +45,51 @@ const UserActions = (function () {
 
     async function toggleScreenSharing() {
         if (!Store.getRoom()) return window.alert("Please join a room first");
-        try {
-            if (!isScreenSharingEnabled) {
-                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                const screenTrack = new Twilio.Video.LocalVideoTrack(stream.getVideoTracks()[0]);
-                Store.getRoom().localParticipant.publishTrack(screenTrack);
-                console.log("Screen sharing started");
-                renderActions.handleScreenSharingTrack(screenTrack, document.getElementById("myVideo"));
-            } else {
-                const room = Store.getRoom();
-                const screenTrack = room.localParticipant.videoTracks.find(track => track.track.name.includes('screen'));
-                if (screenTrack) {
-                    screenTrack.track.stop();
-                    room.localParticipant.unpublishTrack(screenTrack.track);
-                    console.log("Screen sharing stopped");
-                    renderActions.removeParticipantVideo(room.localParticipant); // Remove screen sharing video from the UI
-                }
+        if (!renderActions.isScreenSharingActive()) {
+            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            const screenTrack = new Twilio.Video.LocalVideoTrack(stream.getVideoTracks()[0]);
+            Store.getRoom().localParticipant.publishTrack(screenTrack);
+            const selfVideoDiv = document.getElementById("myVideo");
+            const selfVideoParent = selfVideoDiv.parentElement;
+            const screenVideoElement = document.createElement("video");
+            screenVideoElement.autoplay = true;
+            screenVideoElement.muted = true;
+            screenVideoElement.classList.add("twilio-screen-video"); // Add a class for styling if needed
+            // Attach the screen sharing track to the new video element
+            screenTrack.attach(screenVideoElement);
+            // Replace the self video div with the screen sharing video element
+            selfVideoParent.replaceChild(screenVideoElement, selfVideoDiv);
+            // Optionally, detach the old self video track if it's still attached
+            if (Store.getRoom().localParticipant.videoTracks.size > 1) {
+                Store.getRoom().localParticipant.videoTracks.forEach((trackPublication) => {
+                    if (trackPublication.track !== screenTrack) {
+                        const oldTrack = trackPublication.track;
+                        oldTrack.detach().forEach((element) => element.remove());
+                        oldTrack.stop();
+                    }
+                });
             }
-            isScreenSharingEnabled = !isScreenSharingEnabled; // Toggle the state
-        } catch (error) {
-            console.error("Error toggling screen sharing:", error);
+        }
+            else {
+            if (Store.getRoom().localParticipant.videoTracks.size > 0) {
+                Store.getRoom().localParticipant.videoTracks.forEach((trackPublication) => {
+                    if (trackPublication.track.kind === "video") {
+                        trackPublication.track.stop();
+                        trackPublication.track.detach().forEach((element) => element.remove());
+                    }
+                });
+            }
         }
     }
 
-    function eventHandler() {
-        console.log("Setting up event handlers");
+    function setUpEventHandler() {
         document.getElementById("toggleMicrophone").addEventListener("click", toggleMicrophone);
         document.getElementById("toggleWebcam").addEventListener("click", toggleWebcam);
         document.getElementById("toggleScreenShare").addEventListener("click", toggleScreenSharing); // Add event listener for toggling screen sharing
     }
 
     return {
-        eventHandler: eventHandler
+        setUpEventHandler: setUpEventHandler
     }
 })();
 

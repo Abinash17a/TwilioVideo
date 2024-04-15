@@ -64,12 +64,27 @@ function renderExistingParticipants () {
     });
 };
 
+function isScreenSharingActive() {
+    if (Store.getRoom().localParticipant && Store.getRoom().localParticipant.videoTracks.size > 0) {
+        return Array.from(Store.getRoom().localParticipant.videoTracks.values()).some((trackPublication) => {
+            if (trackPublication.track.kind === 'video') {
+                if (trackPublication.track.mediaStreamTrack.label.includes('screen')) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+    return false;
+}
+
 return {
     renderParticipant:renderParticipant,
     renderRemoteParticipant:renderRemoteParticipant,
     removeParticipantVideo:removeParticipantVideo,
     handleTrackPublication:handleTrackPublication,
-    renderExistingParticipants:renderExistingParticipants
+    renderExistingParticipants:renderExistingParticipants,
+    isScreenSharingActive:isScreenSharingActive,
 };
 
 })();
