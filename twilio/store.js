@@ -10,7 +10,7 @@ const Device = Twilio.Device;
     let connection;
     let roomId
     let identity
-
+    let isScreenSharing = false;
     // Public methods to get and set variables
     function getAuthToken() {
         return token;
@@ -26,7 +26,6 @@ const Device = Twilio.Device;
         return identity
     }
     function setFields(queryParams){
-        // const queryParams = new URLSearchParams(window.location.search);
         roomId = queryParams.get('roomId');
         identity = queryParams.get('identity');
     }
@@ -42,6 +41,12 @@ const Device = Twilio.Device;
     function setRoom(roomname) {
         room=roomname;
     }
+    function getisScreenSharing() {
+        return isScreenSharing;
+    }
+    function setisScreenSharing(screenShare) {
+        isScreenSharing=screenShare;
+    }
 
     // Public interface
     return {
@@ -55,7 +60,9 @@ const Device = Twilio.Device;
         getlocalParticipant:getlocalParticipant,
         setlocalParticipant:setlocalParticipant,
         setRoom:setRoom,
-        getRoom:getRoom
+        getRoom:getRoom,
+        getisScreenSharing:getisScreenSharing,
+        setisScreenSharing:setisScreenSharing
     };
 })();
 export default Store;

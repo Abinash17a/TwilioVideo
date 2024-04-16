@@ -19,37 +19,38 @@ const renderActions=(function(){
     };
 
     // Render remote participant
-function renderRemoteParticipant  (participant)  {
-    console.log("Rendering remote participant:", participant.identity);
+    function renderRemoteParticipant  (participant)  {
+        console.log("Rendering remote participant:", participant.identity);
 
-    try {
-        const participantDiv = document.createElement("div");
-        participantDiv.setAttribute("id", participant.identity);
-        document.getElementById("videoContainer").appendChild(participantDiv);
+        try {
+            const participantDiv = document.createElement("div");
+            participantDiv.setAttribute("id", participant.identity);
+            document.getElementById("videoContainer").appendChild(participantDiv);
 
-        participant.on('trackSubscribed', track => {
-            participantDiv.appendChild(track.attach());
-        });
+            participant.on('trackSubscribed', track => {
+                participantDiv.appendChild(track.attach());
+            });
 
-        console.log(`Rendering remote participant ${participant.identity}`);
-    } catch (error) {
-        console.error(`Error rendering remote participant ${participant.identity}:`, error);
-    }
-};
+            console.log(`Rendering remote participant ${participant.identity}`);
+        } catch (error) {
+            console.error(`Error rendering remote participant ${participant.identity}:`, error);
+        }
+    };
 
-// Remove participant video when they leave
-function removeParticipantVideo  (participant)  {
-    const participantDiv = document.getElementById(participant.identity);
-    if (participantDiv) {
-        participantDiv.remove();
-        console.log(`Removed video for participant ${participant.identity}`);
-    }
-};
+    // Remove participant video when they leave
+    function removeParticipantVideo  (participant)  {
+        const participantDiv = document.getElementById(participant.identity);
+        if (participantDiv) {
+            participantDiv.remove();
+            console.log(`Removed video for participant ${participant.identity}`);
+        }
+    };
 
 // Handle track publication
 function handleTrackPublication  (trackPublication, participant)  {
     const track = trackPublication.track;
-    const participantDiv = document.getElementById(participant.identity);
+    const participantDiv = document.getElementById("myVideo");
+    // console.log(`Participant ${participant.identity} published a track`, participantDiv);
     if (track && participantDiv) {
         participantDiv.appendChild(track.attach());
     }
@@ -64,11 +65,19 @@ function renderExistingParticipants () {
     });
 };
 
-function isScreenSharingActive() {
+
+function isWebcamEnabled() {
     if (Store.getRoom().localParticipant && Store.getRoom().localParticipant.videoTracks.size > 0) {
         return Array.from(Store.getRoom().localParticipant.videoTracks.values()).some((trackPublication) => {
             if (trackPublication.track.kind === 'video') {
-                if (trackPublication.track.mediaStreamTrack.label.includes('screen')) {
+                console.log(trackPublication.track.mediaStreamTrack.label,
+                trackPublication.track.mediaStreamTrack.readyState
+            )
+                if (
+                    trackPublication.track.mediaStreamTrack.label.includes('Camera')
+                    && 
+                    trackPublication.track.mediaStreamTrack.readyState !== 'ended'
+                ) {
                     return true;
                 }
             }
@@ -84,7 +93,7 @@ return {
     removeParticipantVideo:removeParticipantVideo,
     handleTrackPublication:handleTrackPublication,
     renderExistingParticipants:renderExistingParticipants,
-    isScreenSharingActive:isScreenSharingActive,
+    isWebcamEnabled:isWebcamEnabled
 };
 
 })();
