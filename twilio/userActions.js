@@ -139,7 +139,6 @@ const UserActions = (function () {
         // clear the video container, etc.
       }
 
-
     function setUpEventHandler() {
         document.getElementById("toggleMicrophone").addEventListener("click", toggleMicrophone);
         document.getElementById("toggleWebcam").addEventListener("click", toggleWebcam);
