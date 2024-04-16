@@ -24,12 +24,22 @@ body {
 }
 
 .video-screen {
-    width: 640px;
-    height: 480px;
+    height: 100vh;
+    width: 100vw;
     background-color: #d9d9d9;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
+}
+
+.navbar {
+    width: 100vw;
+    height: 10vh;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    position: fixed;
 }
 
 .controls {
