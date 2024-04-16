@@ -26,11 +26,10 @@ const renderActions=(function(){
             const participantDiv = document.createElement("div");
             participantDiv.setAttribute("id", participant.identity);
             document.getElementById("videoContainer").appendChild(participantDiv);
-
             participant.on('trackSubscribed', track => {
                 participantDiv.appendChild(track.attach());
             });
-
+            updateLayout()
             console.log(`Rendering remote participant ${participant.identity}`);
         } catch (error) {
             console.error(`Error rendering remote participant ${participant.identity}:`, error);
@@ -43,6 +42,7 @@ const renderActions=(function(){
         if (participantDiv) {
             participantDiv.remove();
             console.log(`Removed video for participant ${participant.identity}`);
+            updateLayout()
         }
     };
 
@@ -87,13 +87,27 @@ function isWebcamEnabled() {
     return false;
 }
 
+function updateLayout() {
+    const videoGrid = document.getElementById('videoContainer');
+    const numParticipants = videoGrid.children.length;
+    console.log("numParticipants",numParticipants)
+    // Calculate optimal number of columns and rows based on available space
+    let numColumns = Math.ceil(Math.sqrt(numParticipants));
+    let numRows = Math.ceil(numParticipants / numColumns);
+
+    // Set CSS custom properties for dynamic video element sizing
+    videoGrid.style.setProperty('--num-columns', numColumns);
+    videoGrid.style.setProperty('--num-rows', numRows);
+  }
+
 return {
     renderParticipant:renderParticipant,
     renderRemoteParticipant:renderRemoteParticipant,
     removeParticipantVideo:removeParticipantVideo,
     handleTrackPublication:handleTrackPublication,
     renderExistingParticipants:renderExistingParticipants,
-    isWebcamEnabled:isWebcamEnabled
+    isWebcamEnabled:isWebcamEnabled,
+    updateLayout:updateLayout
 };
 
 })();
