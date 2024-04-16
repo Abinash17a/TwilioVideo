@@ -1,6 +1,7 @@
 import Store from "./store.js";
 import renderActions from "./video/render.js";
 
+
 const UserActions = (function () {
     let isMicrophoneEnabled = true;
     function toggleMicrophone() {
