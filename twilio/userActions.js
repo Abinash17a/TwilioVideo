@@ -117,12 +117,33 @@ const UserActions = (function () {
             await startScreenSharing();
         }
     }
+    async function leaveMeeting() {
+        const room = Store.getRoom();
+        if (!room) {
+          console.warn("You are not currently in a room");
+          return;
+        }
+      
+        // Disconnect local participant's tracks (microphone, webcam, screen share)
+        const localParticipant = room.localParticipant;
+        localParticipant.tracks.forEach(trackPublication => {
+          trackPublication.track.stop();
+        });
+      
+        // Disconnect from the room
+        await room.disconnect();
+      
+        // Clean up UI (optional)
+        // You can call functions from render.js to remove participant videos, 
+        // clear the video container, etc.
+      }
 
 
     function setUpEventHandler() {
         document.getElementById("toggleMicrophone").addEventListener("click", toggleMicrophone);
         document.getElementById("toggleWebcam").addEventListener("click", toggleWebcam);
         document.getElementById("toggleScreenShare").addEventListener("click", toggleScreenSharing); // Add event listener for toggling screen sharing
+        document.getElementById("leaveMeetingButton").addEventListener("click", leaveMeeting); 
     }
 
     return {
