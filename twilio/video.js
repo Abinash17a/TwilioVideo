@@ -7,7 +7,6 @@ const VideoActions = (function () {
 
   async function JoinRoom() {
     try {
-  
       console.log("JoinRoom is called", Store.getRoomId());
       const token = await Authmodule.getAuthToken();
       Store.setRoom(await Store.TwilioVideo.connect(

@@ -1,4 +1,4 @@
-body {
+/* body {
     margin: 0;
     font-family: Arial, sans-serif;
 }
@@ -9,7 +9,7 @@ body {
     align-items: center;
     height: calc(100vh - 100px);
     background-color: #f2f2f2;
-}
+} */
 
 #videoContainer div {
     width: calc(100% / var(--num-columns));
@@ -32,7 +32,7 @@ body {
     justify-content: space-between;
 }
 
-.navbar {
+/* .navbar {
     width: 100vw;
     height: 10vh;
     align-items: center;
@@ -40,32 +40,11 @@ body {
     background-color: #007bff;
     color: #fff;
     position: fixed;
-}
-
-.controls {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-}
-
-.controls button {
-    margin: 0 10px;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    outline: none;
-    transition: background-color 0.3s ease;
-}
-
-.controls button:hover {
-    background-color: #0056b3;
-}
-#meetingTime {
+} */
+/* #meetingTime {
     font-size: 24px;
     font-weight: bold;
     margin-top: 20px;
-}
+} */
+
+
