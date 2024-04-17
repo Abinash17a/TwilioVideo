@@ -7,6 +7,7 @@ const VideoActions = (function () {
 
   async function JoinRoom() {
     try {
+  
       console.log("JoinRoom is called", Store.getRoomId());
       const token = await Authmodule.getAuthToken();
       Store.setRoom(await Store.TwilioVideo.connect(
@@ -17,8 +18,8 @@ const VideoActions = (function () {
         }
       ));
       console.log(`Connected to Room: ${Store.getRoom().name}`);
-      Store.setlocalParticipant();
-
+      // Store.setlocalParticipant();
+      Store.setMeetingStartTime(new Date());
       try {
         renderActions.renderParticipant(Store.getRoom().localParticipant);
       } catch (error) {

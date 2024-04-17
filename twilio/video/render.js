@@ -1,4 +1,5 @@
 import Store from '../store.js';
+import MeetingTimer from "../meetingTime.js";
 
 const renderActions=(function(){
 
@@ -16,6 +17,7 @@ const renderActions=(function(){
         participant.on("trackPublished", trackPublication => {
             handleTrackPublication(trackPublication, participant);
         });
+        MeetingTimer.startMeetingTimer();
     };
 
     // Render remote participant
