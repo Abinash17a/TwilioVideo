@@ -30,7 +30,7 @@ const UserActions = (function () {
 
     async function reStartWebcam() {
         try {
-            createSelfVideoElement()
+            //createSelfVideoElement()
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             const newTrack = stream.getVideoTracks()[0];
             Store.getRoom().localParticipant.publishTrack(newTrack);
@@ -50,17 +50,20 @@ const UserActions = (function () {
     async function toggleWebcam() {
         if (!Store.getRoom()) return window.alert("Please join a room first");
         const videoTracks = await Store.getRoom().localParticipant.videoTracks;
-
-        if (videoTracks.size) {
-        videoTracks.forEach(async videoTrack => {
-            if (renderActions.isWebcamEnabled()) {
-               await stopWebcam(videoTrack);
-            } else {
-                await startWebcam(videoTrack);
+        try {
+            if (videoTracks.size) {
+            videoTracks.forEach(async videoTrack => {
+                if (renderActions.isWebcamEnabled()) {
+                await stopWebcam(videoTrack);
+                } else {
+                    await startWebcam(videoTrack);
+                }
+            });
+            } else if (videoTracks.size === 0 && !renderActions.isWebcamEnabled()) {
+                await reStartWebcam();
             }
-        });
-        } else if (videoTracks.size === 0 && !renderActions.isWebcamEnabled()) {
-            await reStartWebcam();
+        } catch (error) {
+            console.error("Error toggling webcam:", error);
         }
     }
 
@@ -77,7 +80,8 @@ const UserActions = (function () {
 
     async function startScreenSharing() {
         try {
-            createSelfVideoElement();
+            //renderActions.removeAllRemoteParticipantVideo();
+            //createSelfVideoElement();
             const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             const screenTrack = new Twilio.Video.LocalVideoTrack(stream.getVideoTracks()[0]);
             Store.getRoom().localParticipant.publishTrack(screenTrack);
@@ -95,13 +99,17 @@ const UserActions = (function () {
         Store.getRoom().localParticipant.videoTracks.forEach((trackPublication) => {
             if (trackPublication.track.kind === "video") {
                 const screenTrack = trackPublication.track;
-                screenTrack.stop();
                 screenTrack.detach().forEach((element) => {
                     element instanceof HTMLElement &&
-                    element.remove()});
+                    element.remove()}
+                );
+                screenTrack.unpublishTrack(trackPublication.track);
+                screenTrack.stop();
             }
         });
-        Store.setisScreenSharing(false);    
+       // renderActions.renderExistingParticipants();
+        //renderActions.renderParticipant(Store.getRoom().localParticipant);
+        Store.setisScreenSharing(false);  
     }
     
     async function toggleScreenSharing() {

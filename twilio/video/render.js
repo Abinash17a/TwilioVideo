@@ -8,7 +8,7 @@ const renderActions=(function(){
 
         const localParticipantDiv = document.createElement("div");
         localParticipantDiv.setAttribute("id", participant.identity);
-        document.getElementById("myVideo").appendChild(localParticipantDiv);
+        document.getElementById("videoContainer").appendChild(localParticipantDiv);
 
         participant.tracks.forEach(trackPublication => {
             handleTrackPublication(trackPublication, participant);
@@ -48,13 +48,34 @@ const renderActions=(function(){
         }
     };
 
+    function removeAllRemoteParticipantVideo  ()  {
+        Store.getRoom().participants.forEach(participant => {
+        const participantDiv = document.getElementById(participant.identity);
+        if (participantDiv) {
+            participantDiv.remove();
+            console.log(`Removed video for participant ${participant.identity}`);
+            updateLayout()
+        }
+        participant.tracks.forEach(trackPublication => {
+            if (trackPublication.track) {
+                trackPublication.track.disable();
+                trackPublication.track.detach().forEach(element => {
+                    element instanceof HTMLElement &&
+                    element.remove()
+                });
+                Store.getRoom().localParticipant.unpublishTrack(trackPublication.track);
+            }
+        })
+        });
+    };
+
 // Handle track publication
 function handleTrackPublication  (trackPublication, participant)  {
     const track = trackPublication.track;
-    const participantDiv = document.getElementById("myVideo");
-    // console.log(`Participant ${participant.identity} published a track`, participantDiv);
+    const participantDiv = document.getElementById(participant.identity);
     if (track && participantDiv) {
         participantDiv.appendChild(track.attach());
+        updateLayout()
     }
 };
 
@@ -92,11 +113,9 @@ function isWebcamEnabled() {
 function updateLayout() {
     const videoGrid = document.getElementById('videoContainer');
     const numParticipants = videoGrid.children.length;
-    console.log("numParticipants",numParticipants)
     // Calculate optimal number of columns and rows based on available space
     let numColumns = Math.ceil(Math.sqrt(numParticipants));
     let numRows = Math.ceil(numParticipants / numColumns);
-
     // Set CSS custom properties for dynamic video element sizing
     videoGrid.style.setProperty('--num-columns', numColumns);
     videoGrid.style.setProperty('--num-rows', numRows);
@@ -109,7 +128,8 @@ return {
     handleTrackPublication:handleTrackPublication,
     renderExistingParticipants:renderExistingParticipants,
     isWebcamEnabled:isWebcamEnabled,
-    updateLayout:updateLayout
+    updateLayout:updateLayout,
+    removeAllRemoteParticipantVideo:removeAllRemoteParticipantVideo
 };
 
 })();
