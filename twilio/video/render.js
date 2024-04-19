@@ -31,6 +31,12 @@ const renderActions=(function(){
             participant.on('trackSubscribed', track => {
                 participantDiv.appendChild(track.attach());
             });
+            participant.on('trackUnsubscribed', track => {
+                track.detach().forEach(element => {
+                    element instanceof HTMLElement &&
+                    element.remove()
+                });
+            });
             updateLayout()
             console.log(`Rendering remote participant ${participant.identity}`);
         } catch (error) {

@@ -130,6 +130,7 @@ const UserActions = (function () {
         Store.getRoom().localParticipant.videoTracks.forEach((trackPublication) => {
             if (trackPublication.track.kind === "video") {
                 const screenTrack = trackPublication.track;
+                screenTrack.disable();
                 screenTrack.detach().forEach((element) => {
                     element instanceof HTMLElement &&
                     element.remove()}
