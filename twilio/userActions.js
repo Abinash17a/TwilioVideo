@@ -9,28 +9,23 @@ const UserActions = (function () {
         if (!Store.getRoom()) return window.alert("Please join a room first");
         const audioTracks = Store.getRoom().localParticipant.audioTracks;
         audioTracks.forEach(audioTrack => {
-          if (isMicrophoneEnabled) {
-            audioTrack.track.disable();
-          } else {
-            audioTrack.track.enable();
-          }
+            if (isMicrophoneEnabled) {
+                audioTrack.track.disable();
+            } else {
+                audioTrack.track.enable();
+            }
         });
         isMicrophoneEnabled = !isMicrophoneEnabled;
-        console.log("mic button clicked");
         const micIcon = document.getElementById("micIcon"); // Select the icon element within the button
-        if(micIcon){
-            console.log("mic icon found");
-        }
-        if(isMicrophoneEnabled){
-            console.log("mic class change");
+        if (isMicrophoneEnabled) {
             micIcon.className = "bi-mic text-white";
-        }else{
+        } else {
             micIcon.className = "bi-mic-mute text-white";
         }
-    
+
         return false; // Optional: Prevent default button behavior
-      }
-      
+    }
+
 
     async function startWebcam(videoTrack) {
         try {
@@ -65,39 +60,39 @@ const UserActions = (function () {
 
     async function toggleWebcam() {
         if (!Store.getRoom()) return window.alert("Please join a room first");
-      
+
         const videoTracks = await Store.getRoom().localParticipant.videoTracks;
-      
+
         if (videoTracks.size) {
-          videoTracks.forEach(async videoTrack => {
-            const isWebcamEnabled = await renderActions.isWebcamEnabled(); // Ensure proper await
-            if (isWebcamEnabled) {
-              await stopWebcam(videoTrack);
-              console.log("Camera off");
-              const webcamIcon = document.getElementById("camIcon"); // Use the correct ID
-              webcamIcon.classList.remove("bi-camera-video");
-              webcamIcon.classList.add("bi-camera-video-off");
-            } else {
-              await startWebcam(videoTrack);
-              console.log("Camera on");
-              const webcamIcon = document.getElementById("camIcon");
-             
+            videoTracks.forEach(async videoTrack => {
+                const isWebcamEnabled = await renderActions.isWebcamEnabled(); // Ensure proper await
+                if (isWebcamEnabled) {
+                    await stopWebcam(videoTrack);
+                    console.log("Camera off");
+                    const webcamIcon = document.getElementById("camIcon"); // Use the correct ID
+                    webcamIcon.classList.remove("bi-camera-video");
+                    webcamIcon.classList.add("bi-camera-video-off");
+                } else {
+                    await startWebcam(videoTrack);
+                    console.log("Camera on");
+                    const webcamIcon = document.getElementById("camIcon");
 
 
-              webcamIcon.classList.remove("bi-camera-video-off"); // Assuming off state class
-              webcamIcon.classList.add("bi-camera-video"); 
-            }
-          });
+
+                    webcamIcon.classList.remove("bi-camera-video-off"); // Assuming off state class
+                    webcamIcon.classList.add("bi-camera-video");
+                }
+            });
         } else if (videoTracks.size === 0 && !await renderActions.isWebcamEnabled()) {
-          await reStartWebcam();
-          console.log("Restarted camera");
-          const webcamIcon = document.getElementById("camIcon");
-          webcamIcon.classList.remove("bi-camera-video-off"); // Assuming off state class
-          webcamIcon.classList.add("bi-camera-video");
+            await reStartWebcam();
+            console.log("Restarted camera");
+            const webcamIcon = document.getElementById("camIcon");
+            webcamIcon.classList.remove("bi-camera-video-off"); // Assuming off state class
+            webcamIcon.classList.add("bi-camera-video");
         }
-      
+
         // Consider adding error handling with a try...catch block
-      }
+    }
     function createSelfVideoElement() {
         if (document.getElementById("myVideo")) return;
         const videoContainer = document.getElementById("video-container");
@@ -111,8 +106,6 @@ const UserActions = (function () {
 
     async function startScreenSharing() {
         try {
-            //renderActions.removeAllRemoteParticipantVideo();
-            //createSelfVideoElement();
             const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             const screenTrack = new Twilio.Video.LocalVideoTrack(stream.getVideoTracks()[0]);
             Store.getRoom().localParticipant.publishTrack(screenTrack);
@@ -133,15 +126,16 @@ const UserActions = (function () {
                 screenTrack.disable();
                 screenTrack.detach().forEach((element) => {
                     element instanceof HTMLElement &&
-                    element.remove()}
+                        element.remove()
+                }
                 );
                 screenTrack.unpublishTrack(trackPublication.track);
                 screenTrack.stop();
             }
         });
-       // renderActions.renderExistingParticipants();
+        // renderActions.renderExistingParticipants();
         //renderActions.renderParticipant(Store.getRoom().localParticipant);
-        Store.setisScreenSharing(false);  
+        Store.setisScreenSharing(false);
     }
 
     async function toggleScreenSharing() {
@@ -179,16 +173,79 @@ const UserActions = (function () {
         // clear the video container, etc.
     }
 
-    function setUpEventHandler() {
-        document.getElementById("toggleMicrophone").addEventListener("click", toggleMicrophone);
-        document.getElementById("toggleWebcam").addEventListener("click", toggleWebcam);
-        document.getElementById("toggleScreenShare").addEventListener("click", toggleScreenSharing); // Add event listener for toggling screen sharing
-        document.getElementById("leaveMeetingButton").addEventListener("click", leaveMeeting);
+    async function onTrackEnabled(track, participant) {
+        console.log('enable-------<><><>>>')
+        toggleMicIconVisibility(participant, 'unmuted');
     }
 
-    return {
-        setUpEventHandler: setUpEventHandler
+    function toggleMicIconVisibility(participant, action) {
+        const micIcon = document.getElementById(`micIcon_${participant.identity}`);
+        if (action === 'unmuted') {
+            micIcon.classList.remove("bi-mic-mute");
+        }else{
+            micIcon.classList.add("bi-mic-mute");
+        }
     }
-})();
 
-export default UserActions;
+    async function onTrackDisabled(track, participant) {
+        toggleMicIconVisibility(participant, 'muted');
+    }
+        function attachTrackEnabledAndDisabledHandlers(track, participant) {
+            track.on('enabled', () => onTrackEnabled(track, participant));
+            track.on('disabled', () => onTrackDisabled(track, participant));
+        }
+
+        function handleMuteAndUnmuteEventsForRemoteParticipant(participant) {
+            participant.tracks.forEach(publication => {
+                if (!publication.isSubscribed)
+                    return;
+
+                if (!publication.track)
+                    return;
+
+                const track = publication.track;
+
+                attachTrackEnabledAndDisabledHandlers(track, participant);
+            });
+        }
+
+        function trackExistsAndIsAttachable(track) {
+            return track && track.attach && track.detach;
+        }
+
+        function onTrackSubscribed(track, participant) {
+            attachTrackEnabledAndDisabledHandlers(track, participant);
+        }
+
+        function onTrackUnsubscribed(track, participant) {
+            // if (trackExistsAndIsAttachable(track))
+            track.detach().forEach(element => element.remove());
+        }
+
+        function manageTracksForRemoteParticipant(participant) {
+            // Attach tracks that this participant has already published.
+            // attachAttachableTracksForRemoteParticipant(participant);
+
+            // Handle mute and unmute events for tracks this participant has already published.
+            handleMuteAndUnmuteEventsForRemoteParticipant(participant);
+
+            // Handles tracks that this participant eventually publishes.
+            participant.on('trackSubscribed', (track) => onTrackSubscribed(track, participant));
+            participant.on('trackUnsubscribed', (track) => onTrackUnsubscribed(track, participant));
+        }
+
+        function setUpEventHandler() {
+            document.getElementById("toggleMicrophone").addEventListener("click", toggleMicrophone);
+            document.getElementById("toggleWebcam").addEventListener("click", toggleWebcam);
+            document.getElementById("toggleScreenShare").addEventListener("click", toggleScreenSharing); // Add event listener for toggling screen sharing
+            document.getElementById("leaveMeetingButton").addEventListener("click", leaveMeeting);
+        }
+
+        return {
+            setUpEventHandler: setUpEventHandler,
+            manageTracksForRemoteParticipant: manageTracksForRemoteParticipant,
+            // trackExistsAndIsAttachable:trackExistsAndIsAttachable
+        }
+    }) ();
+
+    export default UserActions;
