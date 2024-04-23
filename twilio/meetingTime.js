@@ -2,11 +2,16 @@ import Store from "./store.js";
 
 const MeetingTimer = (function () {
 
+    let intervalID;
     function startMeetingTimer() {
-        setInterval(updateMeetingTime, 1000);
+        intervalID=setInterval(updateMeetingTime, 1000);
+    }
+    function stopMeetingTimer() {
+        clearInterval(intervalID);
     }
 
     function updateMeetingTime() {
+
         const endTime = new Date();
         const meetingTime = calculateMeetingTime(Store.getMeetingStartTime(), endTime);
         displayMeetingTime(meetingTime);
@@ -30,7 +35,8 @@ const MeetingTimer = (function () {
     }
 
     return {
-        startMeetingTimer: startMeetingTimer
+        startMeetingTimer: startMeetingTimer,
+        stopMeetingTimer: stopMeetingTimer
     }
 })();
 

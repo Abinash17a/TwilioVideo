@@ -1,6 +1,6 @@
 import Store from "./store.js";
 import renderActions from "./video/render.js";
-
+import MeetingTimer from "./meetingTime.js";
 
 const UserActions = (function () {
     let isMicrophoneEnabled = true;
@@ -158,8 +158,6 @@ const UserActions = (function () {
             console.warn("You are not currently in a room");
             return;
         }
-
-        // Disconnect local participant's tracks (microphone, webcam, screen share)
         const localParticipant = room.localParticipant;
         localParticipant.tracks.forEach(trackPublication => {
             trackPublication.track.stop();
@@ -167,10 +165,7 @@ const UserActions = (function () {
 
         // Disconnect from the room
         await room.disconnect();
-
-        // Clean up UI (optional)
-        // You can call functions from render.js to remove participant videos, 
-        // clear the video container, etc.
+        MeetingTimer.stopMeetingTimer();
     }
 
     async function onTrackEnabled(track, participant) {
@@ -182,7 +177,7 @@ const UserActions = (function () {
         const micIcon = document.getElementById(`micIcon_${participant.identity}`);
         if (action === 'unmuted') {
             micIcon.classList.remove("bi-mic-mute");
-        }else{
+        } else {
             micIcon.classList.add("bi-mic-mute");
         }
     }
@@ -190,62 +185,62 @@ const UserActions = (function () {
     async function onTrackDisabled(track, participant) {
         toggleMicIconVisibility(participant, 'muted');
     }
-        function attachTrackEnabledAndDisabledHandlers(track, participant) {
-            track.on('enabled', () => onTrackEnabled(track, participant));
-            track.on('disabled', () => onTrackDisabled(track, participant));
-        }
+    function attachTrackEnabledAndDisabledHandlers(track, participant) {
+        track.on('enabled', () => onTrackEnabled(track, participant));
+        track.on('disabled', () => onTrackDisabled(track, participant));
+    }
 
-        function handleMuteAndUnmuteEventsForRemoteParticipant(participant) {
-            participant.tracks.forEach(publication => {
-                if (!publication.isSubscribed)
-                    return;
+    function handleMuteAndUnmuteEventsForRemoteParticipant(participant) {
+        participant.tracks.forEach(publication => {
+            if (!publication.isSubscribed)
+                return;
 
-                if (!publication.track)
-                    return;
+            if (!publication.track)
+                return;
 
-                const track = publication.track;
+            const track = publication.track;
 
-                attachTrackEnabledAndDisabledHandlers(track, participant);
-            });
-        }
-
-        function trackExistsAndIsAttachable(track) {
-            return track && track.attach && track.detach;
-        }
-
-        function onTrackSubscribed(track, participant) {
             attachTrackEnabledAndDisabledHandlers(track, participant);
-        }
+        });
+    }
 
-        function onTrackUnsubscribed(track, participant) {
-            // if (trackExistsAndIsAttachable(track))
-            track.detach().forEach(element => element.remove());
-        }
+    function trackExistsAndIsAttachable(track) {
+        return track && track.attach && track.detach;
+    }
 
-        function manageTracksForRemoteParticipant(participant) {
-            // Attach tracks that this participant has already published.
-            // attachAttachableTracksForRemoteParticipant(participant);
+    function onTrackSubscribed(track, participant) {
+        attachTrackEnabledAndDisabledHandlers(track, participant);
+    }
 
-            // Handle mute and unmute events for tracks this participant has already published.
-            handleMuteAndUnmuteEventsForRemoteParticipant(participant);
+    function onTrackUnsubscribed(track, participant) {
+        // if (trackExistsAndIsAttachable(track))
+        track.detach().forEach(element => element.remove());
+    }
 
-            // Handles tracks that this participant eventually publishes.
-            participant.on('trackSubscribed', (track) => onTrackSubscribed(track, participant));
-            participant.on('trackUnsubscribed', (track) => onTrackUnsubscribed(track, participant));
-        }
+    function manageTracksForRemoteParticipant(participant) {
+        // Attach tracks that this participant has already published.
+        // attachAttachableTracksForRemoteParticipant(participant);
 
-        function setUpEventHandler() {
-            document.getElementById("toggleMicrophone").addEventListener("click", toggleMicrophone);
-            document.getElementById("toggleWebcam").addEventListener("click", toggleWebcam);
-            document.getElementById("toggleScreenShare").addEventListener("click", toggleScreenSharing); // Add event listener for toggling screen sharing
-            document.getElementById("leaveMeetingButton").addEventListener("click", leaveMeeting);
-        }
+        // Handle mute and unmute events for tracks this participant has already published.
+        handleMuteAndUnmuteEventsForRemoteParticipant(participant);
 
-        return {
-            setUpEventHandler: setUpEventHandler,
-            manageTracksForRemoteParticipant: manageTracksForRemoteParticipant,
-            // trackExistsAndIsAttachable:trackExistsAndIsAttachable
-        }
-    }) ();
+        // Handles tracks that this participant eventually publishes.
+        participant.on('trackSubscribed', (track) => onTrackSubscribed(track, participant));
+        participant.on('trackUnsubscribed', (track) => onTrackUnsubscribed(track, participant));
+    }
 
-    export default UserActions;
+    function setUpEventHandler() {
+        document.getElementById("toggleMicrophone").addEventListener("click", toggleMicrophone);
+        document.getElementById("toggleWebcam").addEventListener("click", toggleWebcam);
+        document.getElementById("toggleScreenShare").addEventListener("click", toggleScreenSharing); // Add event listener for toggling screen sharing
+        document.getElementById("leaveMeetingButton").addEventListener("click", leaveMeeting);
+    }
+
+    return {
+        setUpEventHandler: setUpEventHandler,
+        manageTracksForRemoteParticipant: manageTracksForRemoteParticipant,
+        // trackExistsAndIsAttachable:trackExistsAndIsAttachable
+    }
+})();
+
+export default UserActions;

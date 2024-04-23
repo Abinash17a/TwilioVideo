@@ -17,6 +17,7 @@ const VideoActions = (function () {
         }
       ));
       console.log(`Connected to Room: ${Store.getRoom().name}`);
+      document.getElementById('meetingName').innerHTML=`${Store.getRoom().name}`;
       // Store.setlocalParticipant();
       Store.setMeetingStartTime(new Date());
       try {

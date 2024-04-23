@@ -11,14 +11,18 @@ const renderActions = (function () {
     localParticipantDiv.setAttribute("id", participant.identity);
     localParticipantDiv.classList.add("participant-container", "position-relative");
 
-    const micIcon = document.createElement("i");
-    micIcon.setAttribute("id", "micIcon_" + participant.identity);
-    micIcon.classList.add("bi",
-      "float-right", "participant-mic-icon",
-      "position-absolute", "bottom-0", "end-0"
-    ); // Add classes for mic icon and positioning
-
+    // Creating mic icon
+    const micIcon=createMicIconForUer(participant);
     localParticipantDiv.appendChild(micIcon);
+
+    // Creating text element for participant identity
+    const identityText=createUsername(participant);
+    localParticipantDiv.appendChild(identityText);
+
+    // Add the background name div 
+    const participantName = participant.identity; // Replace this with the participant's name
+    const containerSpan = addBackgroundNameDiv(participant.identity);
+    localParticipantDiv.appendChild(containerSpan);
 
     document.getElementById("videoContainer").appendChild(localParticipantDiv);
 
@@ -29,37 +33,48 @@ const renderActions = (function () {
     participant.on("trackPublished", trackPublication => {
       handleTrackPublication(trackPublication, participant);
     });
+
     MeetingTimer.startMeetingTimer();
   }
 
   // Render remote participant
   function renderRemoteParticipant(participant) {
+
     console.log("Rendering remote participant:", participant.identity);
-      const participantDiv = document.createElement("div");
-      participantDiv.setAttribute("id", participant.identity);
-      participantDiv.classList.add("participant-container", "position-relative"); // Add a class for styling
-      const micIcon = document.createElement("i");
-      micIcon.setAttribute("id", "micIcon_" + participant.identity);
-      micIcon.classList.add("bi",
-        "float-right", "participant-mic-icon", 'm-3',
-        "position-absolute", "bottom-0", "end-0"
-      );
-      participantDiv.appendChild(micIcon);
-      document.getElementById("videoContainer").appendChild(participantDiv);
-      UserActions.manageTracksForRemoteParticipant(participant)
-      participant.on('trackSubscribed', track => {
-        if(track.isEnabled){
-          participantDiv.appendChild(track.attach());
-        }else if (track.kind === 'audio'){
-          micIcon.classList.add('bi-mic-mute')
-        }
+    const participantDiv = document.createElement("div");
+    participantDiv.setAttribute("id", participant.identity);
+    participantDiv.classList.add("participant-container", "position-relative"); // Add a class for styling
+
+    // Creating mic icon
+    const micIcon=createMicIconForUer(participant);
+    participantDiv.appendChild(micIcon);
+
+    // Creating text element for participant identity
+    const identityText=createUsername(participant);
+    participantDiv.appendChild(identityText);
+
+    const containerSpan = addBackgroundNameDiv(participant.identity);
+    participantDiv.appendChild(containerSpan);
+
+    //adding the div to the video Container
+    document.getElementById("videoContainer").appendChild(participantDiv);
+    UserActions.manageTracksForRemoteParticipant(participant);
+
+    participant.on('trackSubscribed', track => {
+      if (track.isEnabled) {
+        participantDiv.appendChild(track.attach());
+      } else if (track.kind === 'audio') {
+        micIcon.classList.add('bi-mic-mute');
+      }
+    });
+
+    participant.on('trackUnsubscribed', track => {
+      track.detach().forEach(element => {
+        element instanceof HTMLElement && element.remove();
       });
-      participant.on('trackUnsubscribed', track => {
-        track.detach().forEach(element => {
-          element instanceof HTMLElement && element.remove();
-        });
-      });
-      updateLayout();
+    });
+
+    updateLayout();
   }
 
   // Remove participant video when they leave
@@ -132,6 +147,43 @@ const renderActions = (function () {
       });
     }
     return false;
+  }
+  function getInitials(name) {
+    const words = name.split(' ');
+
+    let initials = '';
+
+    words.forEach(word => {
+      initials += word.charAt(0).toUpperCase();
+    });
+    return initials;
+  }
+  function addBackgroundNameDiv(participantName) {
+    const containerSpan = document.createElement('span');
+    const rowSpan = document.createElement('span');
+    rowSpan.classList.add('row', 'justify-content-center');
+    const colSpan = document.createElement('span');
+    colSpan.classList.add('col-md-4');
+    const initialSpan = document.createElement('span');
+    initialSpan.classList.add('initial-background', 'text-center', 'position-absolute', 'start-50', 'top-50');
+    const initials = getInitials(participantName);
+    initialSpan.textContent = initials;
+    colSpan.appendChild(initialSpan);
+    rowSpan.appendChild(colSpan);
+    containerSpan.appendChild(rowSpan);
+    return containerSpan;
+  }
+  function createUsername(participant){
+    const Text = document.createElement("span");
+    Text.textContent = participant.identity; 
+    Text.classList.add("participant-identity", "float-left", "position-absolute"); 
+    return Text;
+  }
+  function createMicIconForUer(participant){
+    const micIcon = document.createElement("i");
+    micIcon.setAttribute("id", "micIcon_" + participant.identity);
+    micIcon.classList.add("bi", "float-right", "participant-mic-icon", "position-absolute", "bottom-0", "end-0");
+    return micIcon;
   }
 
   function updateLayout() {
