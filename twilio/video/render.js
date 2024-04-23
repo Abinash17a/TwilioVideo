@@ -160,19 +160,14 @@ const renderActions = (function () {
     return initials;
   }
   function addBackgroundNameDiv(participantName) {
-    const containerSpan = document.createElement('span');
-    const rowSpan = document.createElement('span');
-    rowSpan.classList.add('row', 'justify-content-center');
-    const colSpan = document.createElement('span');
-    colSpan.classList.add('col-md-4');
+    const containerDiv = document.createElement('div');
     const initialSpan = document.createElement('span');
-    initialSpan.classList.add('initial-background', 'text-center', 'position-absolute', 'start-50', 'top-50');
+    initialSpan.classList.add('initial-background', 'position-absolute');
     const initials = getInitials(participantName);
+    containerDiv.classList.add("center-div");
     initialSpan.textContent = initials;
-    colSpan.appendChild(initialSpan);
-    rowSpan.appendChild(colSpan);
-    containerSpan.appendChild(rowSpan);
-    return containerSpan;
+    containerDiv.appendChild(initialSpan);
+    return containerDiv;
   }
   function createUsername(participant){
     const Text = document.createElement("span");

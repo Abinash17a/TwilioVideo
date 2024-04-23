@@ -30,7 +30,7 @@ const MeetingTimer = (function () {
         // console.log("Meeting time",meetingTime);
         const meetingTimeElement = document.getElementById('meetingTime');
         if (meetingTimeElement) {
-            meetingTimeElement.innerText = `${meetingTime.hours}:${meetingTime.minutes}:${meetingTime.seconds}`;
+            meetingTimeElement.innerText = `${meetingTime.hours}h:${meetingTime.minutes}m:${meetingTime.seconds}s`;
         }
     }
 
