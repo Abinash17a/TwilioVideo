@@ -55,21 +55,25 @@ const renderActions = (function () {
 
     const containerSpan = addBackgroundNameDiv(participant.identity);
     participantDiv.appendChild(containerSpan);
-
     //adding the div to the video Container
     document.getElementById("videoContainer").appendChild(participantDiv);
     UserActions.manageTracksForRemoteParticipant(participant);
 
     participant.on('trackSubscribed', track => {
-      if (track.isEnabled) {
-        participantDiv.appendChild(track.attach());
-      } else if (track.kind === 'audio') {
-        micIcon.classList.add('bi-mic-mute');
+      const trackElement = track.attach();
+      trackElement.addEventListener('click', () => {
+        zoomTrack(participant.identity);
+      });
+      if(track.isEnabled){
+        participantDiv.appendChild(trackElement);
+      }else if (track.kind === 'audio'){
+        micIcon.classList.add('bi-mic-mute')
       }
     });
 
     participant.on('trackUnsubscribed', track => {
       track.detach().forEach(element => {
+        if(element.classList.contains('participantZoomed')) zoomTrack(participant.identity);
         element instanceof HTMLElement && element.remove();
       });
     });
@@ -132,9 +136,6 @@ const renderActions = (function () {
     if (Store.getRoom().localParticipant && Store.getRoom().localParticipant.videoTracks.size > 0) {
       return Array.from(Store.getRoom().localParticipant.videoTracks.values()).some((trackPublication) => {
         if (trackPublication.track.kind === 'video') {
-          console.log(trackPublication.track.mediaStreamTrack.label,
-            trackPublication.track.mediaStreamTrack.readyState
-          )
           if (
             trackPublication.track.mediaStreamTrack.label.includes('Camera')
             &&
@@ -186,9 +187,9 @@ const renderActions = (function () {
     return micIcon;
   }
 
-  function updateLayout() {
+  function updateLayout(numParticipants=0) {
     const videoGrid = document.getElementById('videoContainer');
-    const numParticipants = videoGrid.children.length;
+    if (!numParticipants) numParticipants = videoGrid.children.length;
     // Calculate optimal number of columns and rows based on available space
     let numColumns = Math.ceil(Math.sqrt(numParticipants));
     let numRows = Math.ceil(numParticipants / numColumns);
@@ -196,6 +197,27 @@ const renderActions = (function () {
     videoGrid.style.setProperty('--num-columns', numColumns);
     videoGrid.style.setProperty('--num-rows', numRows);
   }
+
+  function zoomTrack(id) {
+    console.log('zoomTrack', id)
+    const container = document.getElementById('videoContainer');
+    const participantDiv = document.getElementById(id);
+    if (!participantDiv.classList.contains('participantZoomed')) {
+      participantDiv.classList.toggle('participantZoomed');
+      updateLayout(1)
+      container.childNodes.forEach(participant => {
+        if (participant !== participantDiv) {
+          participant.classList.add('d-none')
+        }
+      });
+    }else{
+      participantDiv.classList.remove('participantZoomed');
+      container.childNodes.forEach(participant => {
+        if (participantDiv !== participant) participant.classList.remove('d-none')
+      })
+      updateLayout()
+    }
+  };
 
   return {
     renderParticipant: renderParticipant,
@@ -205,7 +227,8 @@ const renderActions = (function () {
     renderExistingParticipants: renderExistingParticipants,
     isWebcamEnabled: isWebcamEnabled,
     updateLayout: updateLayout,
-    removeAllRemoteParticipantVideo: removeAllRemoteParticipantVideo
+    removeAllRemoteParticipantVideo: removeAllRemoteParticipantVideo,
+    zoomTrack: zoomTrack
   };
 
 })();

@@ -12,6 +12,7 @@ const Device = Twilio.Device;
     let identity
     let isScreenSharing = false;
     let meetingStartTime;
+    let screenTrack;
     // Public methods to get and set variables
     function getAuthToken() {
         return token;
@@ -56,6 +57,13 @@ const Device = Twilio.Device;
         meetingStartTime=time;
     }
 
+    function getScreenTrack(){
+        return screenTrack;
+    }
+    function setScreenTrack(track){
+        screenTrack=track;
+    }
+
     // Public interface
     return {
         getAuthToken: getAuthToken,
@@ -72,7 +80,9 @@ const Device = Twilio.Device;
         getisScreenSharing:getisScreenSharing,
         setisScreenSharing:setisScreenSharing,
         getMeetingStartTime:getMeetingStartTime,
-        setMeetingStartTime:setMeetingStartTime
+        setMeetingStartTime:setMeetingStartTime,
+        getScreenTrack:getScreenTrack,
+        setScreenTrack:setScreenTrack
     };
 })();
 export default Store;

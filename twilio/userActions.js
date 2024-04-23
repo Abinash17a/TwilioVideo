@@ -40,7 +40,6 @@ const UserActions = (function () {
 
     async function reStartWebcam() {
         try {
-            //createSelfVideoElement()
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             const newTrack = stream.getVideoTracks()[0];
             Store.getRoom().localParticipant.publishTrack(newTrack);
@@ -90,24 +89,13 @@ const UserActions = (function () {
             webcamIcon.classList.remove("bi-camera-video-off"); // Assuming off state class
             webcamIcon.classList.add("bi-camera-video");
         }
-
-        // Consider adding error handling with a try...catch block
-    }
-    function createSelfVideoElement() {
-        if (document.getElementById("myVideo")) return;
-        const videoContainer = document.getElementById("video-container");
-        const selfVideoElement = document.createElement("div");
-        selfVideoElement.id = "myVideo";
-        selfVideoElement.autoplay = true;
-        selfVideoElement.muted = true;
-        selfVideoElement.classList.add("video-screen");
-        videoContainer.prepend(selfVideoElement);
     }
 
     async function startScreenSharing() {
         try {
             const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             const screenTrack = new Twilio.Video.LocalVideoTrack(stream.getVideoTracks()[0]);
+            Store.setScreenTrack(screenTrack);
             Store.getRoom().localParticipant.publishTrack(screenTrack);
             const screenVideoElement = document.createElement("video");
             screenVideoElement.autoplay = true;
@@ -120,21 +108,9 @@ const UserActions = (function () {
     }
 
     async function stopScreenSharing() {
-        Store.getRoom().localParticipant.videoTracks.forEach((trackPublication) => {
-            if (trackPublication.track.kind === "video") {
-                const screenTrack = trackPublication.track;
-                screenTrack.disable();
-                screenTrack.detach().forEach((element) => {
-                    element instanceof HTMLElement &&
-                        element.remove()
-                }
-                );
-                screenTrack.unpublishTrack(trackPublication.track);
-                screenTrack.stop();
-            }
-        });
-        // renderActions.renderExistingParticipants();
-        //renderActions.renderParticipant(Store.getRoom().localParticipant);
+        Store.getRoom().localParticipant.unpublishTrack(Store.getScreenTrack());
+        Store.getScreenTrack().stop();
+        Store.setScreenTrack(null);
         Store.setisScreenSharing(false);
     }
 
@@ -162,14 +138,11 @@ const UserActions = (function () {
         localParticipant.tracks.forEach(trackPublication => {
             trackPublication.track.stop();
         });
-
-        // Disconnect from the room
         await room.disconnect();
         MeetingTimer.stopMeetingTimer();
     }
 
     async function onTrackEnabled(track, participant) {
-        console.log('enable-------<><><>>>')
         toggleMicIconVisibility(participant, 'unmuted');
     }
 
@@ -190,44 +163,30 @@ const UserActions = (function () {
         track.on('disabled', () => onTrackDisabled(track, participant));
     }
 
-    function handleMuteAndUnmuteEventsForRemoteParticipant(participant) {
-        participant.tracks.forEach(publication => {
-            if (!publication.isSubscribed)
-                return;
+        function handleMuteAndUnmuteEventsForRemoteParticipant(participant) {
+            participant.tracks.forEach(publication => {
+                if (!publication.isSubscribed)
+                    return;
+                if (!publication.track)
+                    return;
+                const track = publication.track;
+                attachTrackEnabledAndDisabledHandlers(track, participant);
+            });
+        }
 
-            if (!publication.track)
-                return;
-
-            const track = publication.track;
-
+        function onTrackSubscribed(track, participant) {
             attachTrackEnabledAndDisabledHandlers(track, participant);
-        });
-    }
+        }
 
-    function trackExistsAndIsAttachable(track) {
-        return track && track.attach && track.detach;
-    }
+        function onTrackUnsubscribed(track, participant) {
+            track.detach().forEach(element => element.remove());
+        }
 
-    function onTrackSubscribed(track, participant) {
-        attachTrackEnabledAndDisabledHandlers(track, participant);
-    }
-
-    function onTrackUnsubscribed(track, participant) {
-        // if (trackExistsAndIsAttachable(track))
-        track.detach().forEach(element => element.remove());
-    }
-
-    function manageTracksForRemoteParticipant(participant) {
-        // Attach tracks that this participant has already published.
-        // attachAttachableTracksForRemoteParticipant(participant);
-
-        // Handle mute and unmute events for tracks this participant has already published.
-        handleMuteAndUnmuteEventsForRemoteParticipant(participant);
-
-        // Handles tracks that this participant eventually publishes.
-        participant.on('trackSubscribed', (track) => onTrackSubscribed(track, participant));
-        participant.on('trackUnsubscribed', (track) => onTrackUnsubscribed(track, participant));
-    }
+        function manageTracksForRemoteParticipant(participant) {
+            handleMuteAndUnmuteEventsForRemoteParticipant(participant);
+            participant.on('trackSubscribed', (track) => onTrackSubscribed(track, participant));
+            participant.on('trackUnsubscribed', (track) => onTrackUnsubscribed(track, participant));
+        }
 
     function setUpEventHandler() {
         document.getElementById("toggleMicrophone").addEventListener("click", toggleMicrophone);
