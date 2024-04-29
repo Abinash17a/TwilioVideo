@@ -20,17 +20,24 @@ const MeetingTimer = (function () {
     function calculateMeetingTime(startTime, endTime) {
         const durationInMillis = endTime - startTime;
         const durationInSeconds = Math.floor(durationInMillis / 1000);
+        
         const hours = Math.floor(durationInSeconds / 3600);
         const minutes = Math.floor((durationInSeconds % 3600) / 60);
         const seconds = durationInSeconds % 60;
-        return { hours, minutes, seconds };
+    
+        // Format numbers with leading zeros if needed
+        const formattedHours = hours < 10 ? `0${hours}` : String(hours);
+        const formattedMinutes = minutes < 10 ? `0${minutes}` : String(minutes);
+        const formattedSeconds = seconds < 10 ? `0${seconds}` : String(seconds);
+    
+        return { hours: formattedHours, minutes: formattedMinutes, seconds: formattedSeconds };
     }
 
     function displayMeetingTime(meetingTime) {
         // console.log("Meeting time",meetingTime);
         const meetingTimeElement = document.getElementById('meetingTime');
         if (meetingTimeElement) {
-            meetingTimeElement.innerText = `${meetingTime.hours}h:${meetingTime.minutes}m:${meetingTime.seconds}s`;
+            meetingTimeElement.innerText = `${meetingTime.hours}:${meetingTime.minutes}:${meetingTime.seconds}`;
         }
     }
 

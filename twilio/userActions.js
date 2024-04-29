@@ -149,9 +149,9 @@ const UserActions = (function () {
     function toggleMicIconVisibility(participant, action) {
         const micIcon = document.getElementById(`micIcon_${participant.identity}`);
         if (action === 'unmuted') {
-            micIcon.classList.remove("bi-mic-mute");
+            micIcon.classList.remove("bi-mic-mute-fill");
         } else {
-            micIcon.classList.add("bi-mic-mute");
+            micIcon.classList.add("bi-mic-mute-fill");
         }
     }
 

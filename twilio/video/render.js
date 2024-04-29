@@ -48,7 +48,6 @@ const renderActions = (function () {
     // Creating mic icon
     const micIcon=createMicIconForUer(participant);
     participantDiv.appendChild(micIcon);
-
     // Creating text element for participant identity
     const identityText=createUsername(participant);
     participantDiv.appendChild(identityText);
@@ -178,7 +177,16 @@ const renderActions = (function () {
   function createMicIconForUer(participant){
     const micIcon = document.createElement("i");
     micIcon.setAttribute("id", "micIcon_" + participant.identity);
-    micIcon.classList.add("bi", "float-right", "participant-mic-icon", "position-absolute", "bottom-0", "end-0");
+    micIcon.classList.add("bi", 
+    "float-right", 
+    "participant-mic-icon", 
+    "text-white",
+    "position-absolute",
+     "bottom-0",
+      "end-0", 
+      "m-4",
+      "h4"
+    );
     return micIcon;
   }
 
