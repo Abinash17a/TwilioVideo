@@ -27,14 +27,14 @@ const VideoActions = (function () {
       }
 
       try {
-        renderActions.renderExistingParticipants();
+        await renderActions.renderExistingParticipants();
       } catch (error) {
         console.error("Error rendering previous participants:", error);
       }
 
-      Store.getRoom().on('participantConnected', participant => {
+      Store.getRoom().on('participantConnected', async participant => {
           console.log(`Remote participant connected: ${participant.identity}`);
-          renderActions.renderRemoteParticipant(participant);
+          await renderActions.renderRemoteParticipant(participant);
       });
 
       Store.getRoom().on('participantDisconnected', participant => {

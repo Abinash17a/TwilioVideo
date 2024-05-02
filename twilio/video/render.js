@@ -16,16 +16,17 @@ const renderActions = (function () {
     localParticipantDiv.appendChild(micIcon);
 
     // Creating text element for participant identity
-    const identityText=createUsername(participant);
-    localParticipantDiv.appendChild(identityText);
 
     // Add the background name div 
     const participantName = participant.identity; // Replace this with the participant's name
-    const containerSpan = addBackgroundNameDiv(participant.identity);
-    localParticipantDiv.appendChild(containerSpan);
 
     document.getElementById("videoContainer").appendChild(localParticipantDiv);
 
+    const containerSpan = addBackgroundNameDiv(participant);
+    localParticipantDiv.appendChild(containerSpan);
+    const identityText=createUsername(participant);
+    
+    localParticipantDiv.appendChild(identityText);
     participant.tracks.forEach(trackPublication => {
       handleTrackPublication(trackPublication, participant);
     });
@@ -38,7 +39,7 @@ const renderActions = (function () {
   }
 
   // Render remote participant
-  function renderRemoteParticipant(participant) {
+  async function renderRemoteParticipant(participant) {
 
     console.log("Rendering remote participant:", participant.identity);
     const participantDiv = document.createElement("div");
@@ -49,17 +50,20 @@ const renderActions = (function () {
     const micIcon=createMicIconForUer(participant);
     participantDiv.appendChild(micIcon);
     // Creating text element for participant identity
-    const identityText=createUsername(participant);
-    participantDiv.appendChild(identityText);
 
-    const containerSpan = addBackgroundNameDiv(participant.identity);
-    participantDiv.appendChild(containerSpan);
     //adding the div to the video Container
     document.getElementById("videoContainer").appendChild(participantDiv);
     UserActions.manageTracksForRemoteParticipant(participant);
 
-    participant.on('trackSubscribed', track => {
-      const trackElement = track.attach();
+    const identityText=createUsername(participant);
+    participantDiv.appendChild(identityText);
+    
+    const containerSpan = addBackgroundNameDiv(participant);
+    participantDiv.appendChild(containerSpan);
+    participant.on('trackSubscribed', async (track) => {
+      const trackElement = await track.attach();
+      await updateLayout();
+      trackElement.setAttribute('id', "participant_" +participant.identity);
       trackElement.addEventListener('click', () => {
         zoomTrack(participant.identity);
       });
@@ -70,33 +74,33 @@ const renderActions = (function () {
       }
     });
 
-    participant.on('trackUnsubscribed', track => {
+    participant.on('trackUnsubscribed', async track => {
       track.detach().forEach(element => {
         if(element.classList.contains('participantZoomed')) zoomTrack(participant.identity);
         element instanceof HTMLElement && element.remove();
       });
     });
 
-    updateLayout();
+   await updateLayout();
   }
 
   // Remove participant video when they leave
-  function removeParticipantVideo(participant) {
+  async function removeParticipantVideo(participant) {
     const participantDiv = document.getElementById(participant.identity);
     if (participantDiv) {
       participantDiv.remove();
       console.log(`Removed video for participant ${participant.identity}`);
-      updateLayout()
+     await updateLayout()
     }
   };
 
-  function removeAllRemoteParticipantVideo() {
-    Store.getRoom().participants.forEach(participant => {
+  async function removeAllRemoteParticipantVideo() {
+    Store.getRoom().participants.forEach(async participant => {
       const participantDiv = document.getElementById(participant.identity);
       if (participantDiv) {
         participantDiv.remove();
         console.log(`Removed video for participant ${participant.identity}`);
-        updateLayout()
+       // await updateLayout()
       }
       participant.tracks.forEach(trackPublication => {
         if (trackPublication.track) {
@@ -112,21 +116,22 @@ const renderActions = (function () {
   };
 
   // Handle track publication
-  function handleTrackPublication(trackPublication, participant) {
+  async function handleTrackPublication(trackPublication, participant) {
     const track = trackPublication.track;
     const participantDiv = document.getElementById(participant.identity);
     if (track && participantDiv) {
-      participantDiv.appendChild(track.attach());
-      updateLayout()
+      const trackElement = await track.attach();
+      participantDiv.appendChild(trackElement);
+     await updateLayout()
     }
   };
 
   // Function to render all previous participants
-  function renderExistingParticipants() {
+  async function renderExistingParticipants() {
     console.log("renderPreviousParticipant is called");
-    Store.getRoom().participants.forEach(existingParticipant => {
+    Store.getRoom().participants.forEach(async existingParticipant => {
       console.log(`Rendering previous participant: ${existingParticipant.identity}`);
-      renderRemoteParticipant(existingParticipant);
+      await renderRemoteParticipant(existingParticipant);
     });
   };
 
@@ -158,11 +163,12 @@ const renderActions = (function () {
     });
     return initials;
   }
-  function addBackgroundNameDiv(participantName) {
+  function addBackgroundNameDiv(participant) {
     const containerDiv = document.createElement('div');
     const initialSpan = document.createElement('span');
+    initialSpan.setAttribute('id', 'initialSpan_' + participant.identity);
     initialSpan.classList.add('initial-background', 'position-absolute');
-    const initials = getInitials(participantName);
+    const initials = getInitials(participant.identity);
     containerDiv.classList.add("center-div");
     initialSpan.textContent = initials;
     containerDiv.appendChild(initialSpan);
@@ -170,8 +176,9 @@ const renderActions = (function () {
   }
   function createUsername(participant){
     const Text = document.createElement("span");
+    
     Text.textContent = participant.identity; 
-    Text.classList.add("participant-identity", "float-left", "position-absolute"); 
+    Text.classList.add("participant-identity", "float-left", "position-absolute");
     return Text;
   }
   function createMicIconForUer(participant){
@@ -190,18 +197,46 @@ const renderActions = (function () {
     return micIcon;
   }
 
-  function updateLayout(numParticipants=0) {
+  async function updateLayout(numParticipants = 0) {
     const videoGrid = document.getElementById('videoContainer');
     if (!numParticipants) numParticipants = videoGrid.children.length;
-    // Calculate optimal number of columns and rows based on available space
+    const marginPerElement = 10;
+    const availableWidth = (videoGrid.clientWidth - (numParticipants - 1) * marginPerElement) - 20;
+    const availableHeight = videoGrid.clientHeight-20;
     let numColumns = Math.ceil(Math.sqrt(numParticipants));
     let numRows = Math.ceil(numParticipants / numColumns);
-    // Set CSS custom properties for dynamic video element sizing
-    videoGrid.style.setProperty('--num-columns', numColumns);
-    videoGrid.style.setProperty('--num-rows', numRows);
+    let numofLastRowElements = numParticipants % numColumns;
+    let lastRowIndex = numRows - 1; 
+    let numColumnsForLastRow = Math.ceil(Math.sqrt(numofLastRowElements));
+    let individualWidth;
+    let individualHeight = (availableHeight / numRows) + 'px'; 
+    for (let i = 0; i < videoGrid.children.length; i++) {
+      const participantDiv = videoGrid.children[i];
+      const initialSpan = document.getElementById('initialSpan_' + participantDiv.id);
+        initialSpan.style.marginTop =  (videoGrid.offsetHeight/(videoGrid.children.length>2?5:2))+"px";
+        initialSpan.style.marginLeft =  47+"%";
+      // Check if last row
+      if (i >= lastRowIndex * numColumns && numofLastRowElements) {
+        const lastRowWidth = availableWidth + (numColumnsForLastRow - 1) * marginPerElement +30;
+        individualWidth = `${(lastRowWidth / numColumnsForLastRow)-10}px`;
+        participantDiv.classList.add('participant-container-last-row-odd')
+        videoGrid.style.setProperty('--last-row-odd-width', individualWidth);
+        videoGrid.style.setProperty('--last-row-odd-height', individualHeight);
+        participantDiv.classList.remove('participant-container')
+      } else {
+        //not last row
+        individualWidth = `${availableWidth / numColumns}px`;
+        participantDiv.classList.remove('participant-container-last-row-odd')
+        participantDiv.classList.add('participant-container')
+        videoGrid.style.setProperty('--row-element-width', individualWidth);
+        videoGrid.style.setProperty('--row-element-height', individualHeight);
+      }
+    }
   }
-
-  function zoomTrack(id) {
+  
+  
+  
+  async function zoomTrack(id) {
     console.log('zoomTrack', id)
     const container = document.getElementById('videoContainer');
     const participantDiv = document.getElementById(id);
@@ -218,7 +253,6 @@ const renderActions = (function () {
       container.childNodes.forEach(participant => {
         if (participantDiv !== participant) participant.classList.remove('d-none')
       })
-      updateLayout()
     }
   };
 

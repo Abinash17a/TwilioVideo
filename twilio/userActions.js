@@ -32,7 +32,7 @@ const UserActions = (function () {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             const newTrack = stream.getVideoTracks()[0];
             videoTrack.track.enable();
-            videoTrack.track.attach(newTrack);
+            await videoTrack.track.attach(newTrack);
         } catch (error) {
             console.error("Error accessing webcam:", error);
         }
@@ -42,7 +42,7 @@ const UserActions = (function () {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             const newTrack = stream.getVideoTracks()[0];
-            Store.getRoom().localParticipant.publishTrack(newTrack);
+            await Store.getRoom().localParticipant.publishTrack(newTrack);
         } catch (error) {
             console.error("Error accessing webcam:", error);
         }
@@ -100,7 +100,7 @@ const UserActions = (function () {
             const screenVideoElement = document.createElement("video");
             screenVideoElement.autoplay = true;
             screenVideoElement.muted = true;
-            screenTrack.attach(screenVideoElement);
+            await screenTrack.attach(screenVideoElement);
             Store.setisScreenSharing(true);
         } catch (error) {
             console.error("Error starting screen sharing:", error);
